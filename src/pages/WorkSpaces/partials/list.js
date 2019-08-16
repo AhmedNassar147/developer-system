@@ -1,43 +1,41 @@
 import React from "react";
 import { connect } from "react-redux";
 import { fetchWorkSpaces } from "../modules/actions";
+import List from "antd/es/list";
 
-const { lazy, Suspense, useEffect } = React;
-const List = lazy(() => import("antd/es/list"));
+const { useEffect } = React;
 
-const { _result: Result } = List;
+const { Item } = List;
 
-const ListView = ({ data, loading, getWorkSpaces }) => {
+const ListView = ({ data, loading, getWorkSpaces, uuid }) => {
   useEffect(() => {
-    getWorkSpaces();
+    if (uuid) {
+      getWorkSpaces(uuid);
+    }
     // eslint-disable-next-line
-  }, []);
+  }, [uuid]);
 
   return (
-    <Suspense fallback={null}>
-      <List
-        size="large"
-        header="My Work spaces"
-        bordered
-        loading={loading}
-        rowKey="id"
-        dataSource={data}
-        renderItem={item => <Result.Item>{item}</Result.Item>}
-      />
-    </Suspense>
+    <List
+      size="large"
+      header="My Work spaces"
+      bordered
+      loading={loading}
+      rowKey="id"
+      dataSource={data}
+      renderItem={({ name }) => <Item>{name}</Item>}
+    />
   );
 };
 
-const mapStateToProps = state => {
-  const { data, loading } = state.toJS().workSpaces;
-  return {
-    data,
-    loading
-  };
-};
+const mapStateToProps = state => ({
+  data: state.getIn(["workSpaces", "data"]),
+  loading: state.getIn(["workSpaces", "loading"]),
+  uuid: state.getIn(["userProfile", "uuid"])
+});
 
 const mapDispatchToProps = dispatch => ({
-  getWorkSpaces: () => dispatch(fetchWorkSpaces())
+  getWorkSpaces: uuid => dispatch(fetchWorkSpaces(uuid))
 });
 
 export default connect(

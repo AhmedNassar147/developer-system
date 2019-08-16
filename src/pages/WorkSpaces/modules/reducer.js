@@ -3,7 +3,6 @@ import {
   FETCH_MY_WORK_SPACES_FINISHED,
   ON_CREATE_WORK_SPACE,
   ON_CREATE_WORK_SPACE_FINISHED,
-  TOGGLE_WORK_SPACE_FORM_VISIBLITY,
   WORK_SPACE_FORM_CHANGED
 } from "./types";
 
@@ -13,10 +12,9 @@ const initialState = fromJS({
   data: undefined,
   loading: false,
   workSpaceName: "",
-  showForm: false,
   isCreatingWS: false,
-  noUserFound: false,
-  requestError: undefined
+  requestError: undefined,
+  formError: undefined
 });
 
 export default (state = initialState, action) => {
@@ -27,11 +25,8 @@ export default (state = initialState, action) => {
     case FETCH_MY_WORK_SPACES_FINISHED:
       return state.merge({ loading: false, ...action.newState });
 
-    case TOGGLE_WORK_SPACE_FORM_VISIBLITY:
-      return state.merge({ showForm: !state.toJS().showForm });
-
     case WORK_SPACE_FORM_CHANGED:
-      return state.merge({ workSpaceName: action.value });
+      return state.merge({ workSpaceName: action.value, formError: undefined });
 
     case ON_CREATE_WORK_SPACE:
       return state.merge({ isCreatingWS: true });

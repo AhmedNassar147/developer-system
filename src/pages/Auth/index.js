@@ -17,7 +17,6 @@ import {
   onToggleView
 } from "./modules/actions";
 import { getFormStorage } from "../../utils/localStorage";
-import { isArrayHasData } from "../../utils/isThereData";
 
 const { useEffect } = React;
 
@@ -37,12 +36,7 @@ const AuthView = ({
   useEffect(() => {
     const user = JSON.parse(getFormStorage("user"));
     if (Boolean(user)) {
-      const uuid = user.uuid;
-      if (isArrayHasData(user.workSpaces)) {
-        push(`/workspaces`);
-      } else {
-        push(`/my-workspace/${uuid}`);
-      }
+      push(`/workspaces`);
     }
     // eslint-disable-next-line
   }, []);

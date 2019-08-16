@@ -1,36 +1,23 @@
 import { put, takeLatest, all, select } from "redux-saga/effects";
-import { FETCH_MY_WORK_SPACES } from "./types";
-import { fetchWorkSpacesFinished } from "./actions";
+import { FETCH_MY_WORK_SPACES, ON_CREATE_WORK_SPACE } from "./types";
+import { fetchWorkSpacesFinished, onCreateWorkSpaceFinished } from "./actions";
+import { getUserDataFinished } from "../../Profile/modules/actions";
+import { setToStorage } from "../../../utils/localStorage";
 import { db } from "../../../utils/firebase";
-import { setToStorage, getFormStorage } from "../../../utils/localStorage";
-import { isArrayHasData } from "../../../utils/isThereData";
 
-const validateWorkSpace = value => value;
 const formSelecter = state => state.get("workSpaces").toJS();
-// const { workSpaceName } = yield select(formSelecter);
+const profileSelecter = state => state.get("userProfile").toJS();
 
-function* requestWorkSpaces() {
+function* requestWorkSpaces({ uuid }) {
   try {
-    const user = yield JSON.parse(getFormStorage("user"));
-    if (Boolean(user)) {
-      if (isArrayHasData(user.workSpaces)) {
-        return yield put(fetchWorkSpacesFinished({ data: user.workSpaces }));
-      } else {
-        let data = yield db
-          .ref(`users/${user.uuid}`)
-          .once("value", snapshot => snapshot.val());
-        data = data.toJSON();
-        if (data.hasOwnProperty("workSpaces")) {
-          setToStorage("user", {
-            uuid: user.uuid,
-            workSpaces: data.workSpaces
-          });
-          return yield put(fetchWorkSpacesFinished({ data: data.workSpaces }));
-        }
-        return yield put(fetchWorkSpacesFinished({ data: undefined }));
-      }
+    const ref = db.ref(`workspaces/${uuid}`);
+    let result = yield ref.once("value", snapshot => snapshot);
+    result = result.val();
+    if (Boolean(result)) {
+      yield put(fetchWorkSpacesFinished({ data: formatWs(result) }));
+    } else {
+      yield put(fetchWorkSpacesFinished());
     }
-    return yield put(fetchWorkSpacesFinished({ nouserFound: "nouserFound" }));
   } catch (error) {
     return yield put(
       fetchWorkSpacesFinished({ requestError: "Oops, something went wrong" })
@@ -38,6 +25,53 @@ function* requestWorkSpaces() {
   }
 }
 
+const formatWs = (ws = {}) => {
+  const ids = Object.keys(ws);
+  return ids.map(id => ({
+    id,
+    name: ws[id].name
+  }));
+};
+
+function* requestCreateWorkSpace() {
+  try {
+    const { uuid, workSpaces } = yield select(profileSelecter);
+    const { workSpaceName, data } = yield select(formSelecter);
+    if (workSpaceName && workSpaceName.length > 5) {
+      const newWsItem = { name: workSpaceName };
+      const snapshot = yield db
+        .ref(`/workspaces/${uuid}`)
+        .push(newWsItem)
+        .once("value");
+      const id = snapshot.key;
+      const newWorkSpacesIds = [...(workSpaces || []), id];
+      yield db.ref(`users/${uuid}/`).update({
+        wsIds: newWorkSpacesIds
+      });
+      yield put(getUserDataFinished({ workSpaces: newWorkSpacesIds }));
+      yield setToStorage("user", {
+        uuid,
+        wsIds: newWorkSpacesIds
+      });
+      yield put(
+        onCreateWorkSpaceFinished({
+          data: [...(data || []), newWsItem],
+          workSpaceName: undefined
+        })
+      );
+    } else {
+      return yield put(
+        onCreateWorkSpaceFinished({
+          formError: "spaceWork must be at least 5 characters"
+        })
+      );
+    }
+  } catch (error) {
+    console.log("error", error);
+  }
+}
+
 export default function* workSpacesSaga() {
   yield all([takeLatest(FETCH_MY_WORK_SPACES, requestWorkSpaces)]);
+  yield all([takeLatest(ON_CREATE_WORK_SPACE, requestCreateWorkSpace)]);
 }

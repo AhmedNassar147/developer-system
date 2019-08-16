@@ -18,16 +18,30 @@ function* requestLoginOrSignUp() {
     if (formdata.isSignUpView) {
       const done = yield handleSignUp(formdata);
       if (done) {
-        yield push("/workspaces");
+        yield put(push("/workspaces"));
       }
+    } else {
+      yield handleSignIn(formdata);
+      return yield put(push("/workspaces"));
     }
   } catch (error) {
-    console.log("error =>", error);
     return yield put(
       onLoginOrSignUpFinished({ formError: "Oops, something went wrong" })
     );
   }
 }
+
+const handleSignIn = async ({ email, password }) => {
+  let { user } = await auth.signInWithEmailAndPassword(email, password);
+  user = await user.toJSON();
+  const uuid = user.uid;
+  console.log("user =>", user);
+  await setToStorage("user", {
+    wsIds: user.wsIds,
+    uuid
+  });
+  return uuid;
+};
 
 const handleSignUp = async ({ email, password }) => {
   let isCreated = false;
@@ -39,22 +53,16 @@ const handleSignUp = async ({ email, password }) => {
     isCreated = false;
   }
   if (isCreated) {
-    let { user } = await auth.signInWithEmailAndPassword(email, password);
-    user = user.toJSON();
-    const uuid = user.uid;
-    const result = await db.ref(`users/${uuid}`).set({
+    const uuid = await handleSignIn({ email, password });
+    await db.ref(`users/${uuid}`).set({
       displayName: "",
       email,
       phoneNumber: "",
       photoURL: "",
       password,
-      workspaces: []
+      wsIds: []
     });
-    await setToStorage("user", {
-      workSpaces: undefined,
-      uuid
-    });
-    console.log("result", result);
+    // console.log("result", result);
     done = true;
   }
   return done;

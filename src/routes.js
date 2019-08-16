@@ -2,10 +2,11 @@ import React from "react";
 import { Route, Switch } from "react-router-dom";
 import AuthPage from "./pages/Auth";
 import WorkspacesPage from "./pages/WorkSpaces";
+import ProtectedRoute from "./pages/ProtectedRoute";
 
-export default () => (
+export default (
   <Switch>
     <Route path="/" exact component={AuthPage} />
-    <Route path="/workspaces" exact component={WorkspacesPage} />
+    <ProtectedRoute PageComponent={WorkspacesPage} pagePath="/workspaces" />
   </Switch>
 );
