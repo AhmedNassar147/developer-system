@@ -34,8 +34,8 @@ const AuthView = ({
   history: { push }
 }) => {
   useEffect(() => {
-    const user = JSON.parse(getFormStorage("user"));
-    if (Boolean(user)) {
+    const user = getFormStorage("user");
+    if (user) {
       push(`/workspaces`);
     }
     // eslint-disable-next-line

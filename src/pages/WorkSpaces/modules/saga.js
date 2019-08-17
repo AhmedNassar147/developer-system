@@ -2,7 +2,6 @@ import { put, takeLatest, all, select } from "redux-saga/effects";
 import { FETCH_MY_WORK_SPACES, ON_CREATE_WORK_SPACE } from "./types";
 import { fetchWorkSpacesFinished, onCreateWorkSpaceFinished } from "./actions";
 import { getUserDataFinished } from "../../Profile/modules/actions";
-import { setToStorage } from "../../../utils/localStorage";
 import { db } from "../../../utils/firebase";
 
 const formSelecter = state => state.get("workSpaces").toJS();
@@ -35,7 +34,7 @@ const formatWs = (ws = {}) => {
 
 function* requestCreateWorkSpace() {
   try {
-    const { uuid, workSpaces } = yield select(profileSelecter);
+    const { uuid, wsIds } = yield select(profileSelecter);
     const { workSpaceName, data } = yield select(formSelecter);
     if (workSpaceName && workSpaceName.length > 5) {
       const newWsItem = { name: workSpaceName };
@@ -44,18 +43,14 @@ function* requestCreateWorkSpace() {
         .push(newWsItem)
         .once("value");
       const id = snapshot.key;
-      const newWorkSpacesIds = [...(workSpaces || []), id];
+      const newWorkSpacesIds = [...(wsIds || []), id];
       yield db.ref(`users/${uuid}/`).update({
         wsIds: newWorkSpacesIds
       });
-      yield put(getUserDataFinished({ workSpaces: newWorkSpacesIds }));
-      yield setToStorage("user", {
-        uuid,
-        wsIds: newWorkSpacesIds
-      });
+      yield put(getUserDataFinished({ wsIds: newWorkSpacesIds }));
       yield put(
         onCreateWorkSpaceFinished({
-          data: [...(data || []), newWsItem],
+          data: [...(data || []), { ...newWsItem, id }],
           workSpaceName: undefined
         })
       );

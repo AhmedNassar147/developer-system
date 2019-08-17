@@ -2,8 +2,12 @@ import { fromJS } from "immutable";
 import { FETCH_USER_INFO_FINISHED } from "./types";
 
 const initialState = fromJS({
-  uuid: undefined,
-  workSpaces: undefined
+  uuid: "",
+  wsIds: "",
+  displayName: "",
+  email: "",
+  phoneNumber: "",
+  photoURL: ""
 });
 
 export default (state = initialState, action) => {

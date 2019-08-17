@@ -1,53 +1,56 @@
 import React from "react";
 import { connect } from "react-redux";
-import { push } from "connected-react-router";
-import { Route } from "react-router-dom";
 import { getUserDataFinished } from "../pages/Profile/modules/actions";
 import { getFormStorage } from "../utils/localStorage";
 
+const { lazy, Suspense } = React;
+const PageLayout = lazy(() => import("../components/PageLayout"));
+
 const { useEffect } = React;
 
-const ProtectedRoute = ({
-  PageComponent,
-  pagePath,
-  backToLogin,
-  setUserInfo,
-  userInfo
-}) => {
-  useEffect(() => {
-    onPageMount();
-    // eslint-disable-next-line
-  }, [userInfo]);
+export default (PageComponent, useAppLayout) => {
+  const ViewComponent = ({ setUserInfo, userInfo, ...otherProps }) => {
+    const {
+      history: { push }
+    } = otherProps;
+    useEffect(() => {
+      onPageMount();
+      // eslint-disable-next-line
+    }, [userInfo]);
 
-  const onPageMount = () => {
-    const userData = userInfo.toJS();
-    if (!userData.uuid) {
-      const user = JSON.parse(getFormStorage("user"));
-      if (Boolean(user)) {
-        setUserInfo(user);
-      } else {
-        backToLogin();
+    const onPageMount = () => {
+      const userData = userInfo.toJS();
+      if (!userData.uuid) {
+        const user = getFormStorage("user");
+        if (user) {
+          setUserInfo({ uuid: user });
+        } else {
+          push("/");
+        }
       }
-    }
+    };
+
+    const children = <PageComponent {...otherProps} />;
+
+    return useAppLayout ? (
+      <Suspense fallback={null}>
+        <PageLayout children={children} />
+      </Suspense>
+    ) : (
+      children
+    );
   };
 
-  const componentWithProps = props => (
-    <PageComponent {...props} userInfo={userInfo} />
-  );
+  const mapStateToProps = state => ({
+    userInfo: state.get("userProfile")
+  });
 
-  return <Route path={pagePath} exact render={componentWithProps} />;
+  const mapDispatchToProps = dispatch => ({
+    setUserInfo: info => dispatch(getUserDataFinished(info))
+  });
+
+  return connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(ViewComponent);
 };
-
-const mapStateToProps = state => ({
-  userInfo: state.get("userProfile")
-});
-
-const mapDispatchToProps = dispatch => ({
-  setUserInfo: info => dispatch(getUserDataFinished(info)),
-  backToLogin: () => dispatch(push("/"))
-});
-
-export default connect(
-  mapStateToProps,
-  mapDispatchToProps
-)(ProtectedRoute);

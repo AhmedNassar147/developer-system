@@ -8,3 +8,8 @@ export const ButtonContainer = styled.section`
 export const Content = styled.section`
   text-align: center;
 `;
+
+export const ListHeader = styled.p`
+  font-size: 18px;
+  margin: 0;
+`;

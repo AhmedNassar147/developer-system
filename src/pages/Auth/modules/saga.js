@@ -5,6 +5,7 @@ import { push } from "connected-react-router";
 import { validateAuthForm } from "../../../utils/validations";
 import { auth, db } from "../../../utils/firebase";
 import { setToStorage } from "../../../utils/localStorage";
+import { getUserDataFinished } from "../../../pages/Profile/modules/actions";
 
 const formSelecter = state => state.get("authReducer").toJS();
 
@@ -18,10 +19,12 @@ function* requestLoginOrSignUp() {
     if (formdata.isSignUpView) {
       const done = yield handleSignUp(formdata);
       if (done) {
+        yield put(getUserDataFinished(done));
         yield put(push("/workspaces"));
       }
     } else {
-      yield handleSignIn(formdata);
+      const user = yield handleSignIn(formdata);
+      yield put(getUserDataFinished(user));
       return yield put(push("/workspaces"));
     }
   } catch (error) {
@@ -34,16 +37,13 @@ function* requestLoginOrSignUp() {
 const handleSignIn = async ({ email, password }) => {
   let { user } = await auth.signInWithEmailAndPassword(email, password);
   user = await user.toJSON();
-  const uuid = user.uid;
-  console.log("user =>", user);
-  await setToStorage("user", {
-    wsIds: user.wsIds,
-    uuid
-  });
-  return uuid;
+  const { uid, ...userData } = user;
+  await setToStorage("user", uid);
+  user = { ...userData, uuid: uid };
+  return user;
 };
 
-const handleSignUp = async ({ email, password }) => {
+const handleSignUp = async ({ email, password, username }) => {
   let isCreated = false;
   let done = false;
   try {
@@ -53,17 +53,16 @@ const handleSignUp = async ({ email, password }) => {
     isCreated = false;
   }
   if (isCreated) {
-    const uuid = await handleSignIn({ email, password });
-    await db.ref(`users/${uuid}`).set({
-      displayName: "",
+    const { uuid } = await handleSignIn({ email, password });
+    const data = {
+      displayName: username,
       email,
       phoneNumber: "",
       photoURL: "",
-      password,
       wsIds: []
-    });
-    // console.log("result", result);
-    done = true;
+    };
+    await db.ref(`users/${uuid}`).set(data);
+    done = { ...data, uuid };
   }
   return done;
 };
