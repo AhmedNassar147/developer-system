@@ -3,10 +3,11 @@ import { connect } from "react-redux";
 import { StyledIcon, PopoverItem } from "./styledheader";
 import { fetchWorkSpaces } from "../../pages/WorkSpaces/modules/actions";
 
-const { useEffect, lazy, Suspense } = React;
+const { useEffect, lazy, Suspense, useState } = React;
 const Popover = lazy(() => import("antd/es/popover"));
 
-const WsMenu = ({ wspcs, uuid, getWorkSpaces }) => {
+const WsMenu = ({ wspcs, uuid, getWorkSpaces, wsId }) => {
+  const [visible, updateHander] = useState(false);
   useEffect(() => {
     if (!wspcs) {
       getWorkSpaces(uuid);
@@ -17,13 +18,25 @@ const WsMenu = ({ wspcs, uuid, getWorkSpaces }) => {
   let content = null;
   if (wspcs) {
     content = wspcs.map(({ id, name }) => (
-      <PopoverItem key={id} to={`/workspace/${id}`} children={name} />
+      <PopoverItem
+        key={id}
+        to={`/workspace/${id}`}
+        children={name}
+        selected={id === wsId}
+      />
     ));
   }
 
   return wspcs ? (
     <Suspense fallback={null}>
-      <Popover content={content} trigger="click" placement="bottom">
+      <Popover
+        destroyTooltipOnHide
+        onVisibleChange={updateHander}
+        visible={visible}
+        content={content}
+        trigger="click"
+        placement="bottom"
+      >
         <StyledIcon
           type="appstore"
           lineheight="0"

@@ -49,10 +49,17 @@ export const PopoverItem = styled(Link)`
   padding: 0 2px;
   display: block;
   color: #000;
-  width: 100%;
+  width: 145px;
   font-size: 16px;
+  text-align: center;
   &:hover {
     background: #f2f2f2;
     color: #000;
   }
+  ${({ selected }) =>
+    selected &&
+    `
+  background: #f5f5f5;
+    color: #000;
+  `}
 `;

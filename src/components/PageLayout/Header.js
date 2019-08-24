@@ -11,7 +11,7 @@ import {
   Text
 } from "./styledheader";
 
-const Header = ({ collapsed, toggle, imgUrl }) => (
+const Header = ({ collapsed, toggle, imgUrl, wsId }) => (
   <AppHeader>
     <Row>
       <Col span={3}>
@@ -22,13 +22,13 @@ const Header = ({ collapsed, toggle, imgUrl }) => (
       </Col>
       <Col span={21}>
         <HeaderContent>
-          <Button children="bunch In" type="ghost" />
+          <Button children="bunch In/Out" type="ghost" />
 
           <Text children="00:00:00" />
 
-          <WSpacesMenu />
+          <WSpacesMenu wsId={wsId} />
 
-          <StyledAvatar size={48} icon="user" src={imgUrl} />
+          <StyledAvatar size={40} icon="user" src={imgUrl} />
         </HeaderContent>
       </Col>
     </Row>

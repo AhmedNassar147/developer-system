@@ -9,18 +9,18 @@ const PageLayout = lazy(() => import("../components/PageLayout"));
 const { useEffect } = React;
 
 export default (PageComponent, useAppLayout) => {
-  const ViewComponent = ({ setUserInfo, userInfo, ...otherProps }) => {
+  const ViewComponent = ({ setUserInfo, uuid, ...otherProps }) => {
     const {
-      history: { push }
+      history: { push },
+      match: { params }
     } = otherProps;
     useEffect(() => {
       onPageMount();
       // eslint-disable-next-line
-    }, [userInfo]);
+    }, [uuid]);
 
     const onPageMount = () => {
-      const userData = userInfo.toJS();
-      if (!userData.uuid) {
+      if (!uuid) {
         const user = getFormStorage("user");
         if (user) {
           setUserInfo({ uuid: user });
@@ -34,7 +34,7 @@ export default (PageComponent, useAppLayout) => {
 
     return useAppLayout ? (
       <Suspense fallback={null}>
-        <PageLayout children={children} />
+        <PageLayout params={params} children={children} />
       </Suspense>
     ) : (
       children
@@ -42,7 +42,7 @@ export default (PageComponent, useAppLayout) => {
   };
 
   const mapStateToProps = state => ({
-    userInfo: state.get("userProfile")
+    uuid: state.getIn(["userProfile", "uuid"])
   });
 
   const mapDispatchToProps = dispatch => ({

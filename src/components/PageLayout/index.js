@@ -1,32 +1,45 @@
 import React from "react";
 import { connect } from "react-redux";
 import { Layout, StyledLayout, StyledContent } from "./styled";
-import SideBar from "./SideBar";
+import SideBar from "./SideBar/index";
 import Header from "./Header";
 import { getUserData } from "../../pages/Profile/modules/actions";
 
 const { useState, useEffect } = React;
 
-const PageLayout = ({ children, userInfo, fetchUserData }) => {
+const PageLayout = ({
+  children,
+  displayName,
+  uuid,
+  email,
+  photoURL,
+  fetchUserData,
+  selectedWs,
+  params
+}) => {
   const [collapsed, updateHander] = useState(false);
   useEffect(() => {
-    if (!userInfo.email || !userInfo.displayName) {
+    if (!email || !displayName) {
       fetchUserData();
     }
     // eslint-disable-next-line
-  }, [userInfo]);
+  }, [displayName, email]);
 
   const toggle = () => updateHander(!collapsed);
 
   return (
     <StyledLayout>
-      {SideBar({ collapsed })}
+      {SideBar({
+        collapsed,
+        selectedWs
+      })}
       <Layout>
         <Header
           collapsed={collapsed}
           toggle={toggle}
-          uuid={userInfo.uuid}
-          imgUrl={userInfo.photoURL}
+          uuid={uuid}
+          imgUrl={photoURL}
+          wsId={params && params.wsId}
         />
         <StyledContent>{children}</StyledContent>
       </Layout>
@@ -34,9 +47,24 @@ const PageLayout = ({ children, userInfo, fetchUserData }) => {
   );
 };
 
-const mapStateToProps = state => ({
-  userInfo: state.get("userProfile").toJS()
-});
+const mapStateToProps = (state, { params: { wsId } }) => {
+  let selectedWs;
+  const worksSapces = state.getIn(["workSpaces", "data"]);
+  if (worksSapces && wsId) {
+    const item = worksSapces.find(item => item.id === wsId);
+    if (item) {
+      selectedWs = item.name;
+    }
+  }
+
+  return {
+    displayName: state.getIn(["userProfile", "displayName"]),
+    photoURL: state.getIn(["userProfile", "photoURL"]),
+    email: state.getIn(["userProfile", "email"]),
+    uuid: state.getIn(["userProfile", "uuid"]),
+    selectedWs
+  };
+};
 
 const mapDispatchToProps = dispatch => ({
   fetchUserData: () => dispatch(getUserData())
